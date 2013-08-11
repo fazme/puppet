@@ -30,7 +30,7 @@ describe provider_class do
 
       fullname.should == provider.resource[:name]
     end
-    provider.expects(:execpipe).with(['/bin/pkg_info', '-I', provider.resource[:name]]).yields('')
+    provider.expects(:execpipe).with(['/usr/sbin/pkg_info', '-I', provider.resource[:name]]).yields('')
 
     yield
 
@@ -40,9 +40,9 @@ describe provider_class do
   before :each do
     # Stub some provider methods to avoid needing the actual software
     # installed, so we can test on whatever platform we want.
-    provider_class.stubs(:command).with(:pkginfo).returns('/bin/pkg_info')
-    provider_class.stubs(:command).with(:pkgadd).returns('/bin/pkg_add')
-    provider_class.stubs(:command).with(:pkgdelete).returns('/bin/pkg_delete')
+    provider_class.stubs(:command).with(:pkginfo).returns('/usr/sbin/pkg_info')
+    provider_class.stubs(:command).with(:pkgadd).returns('/usr/sbin/pkg_add')
+    provider_class.stubs(:command).with(:pkgdelete).returns('/usr/sbin/pkg_delete')
   end
 
   context "::instances" do
@@ -52,20 +52,20 @@ describe provider_class do
     end
 
     it "should return the empty set if no packages are listed" do
-      provider_class.expects(:execpipe).with(%w{/bin/pkg_info -a}).yields(StringIO.new(''))
+      provider_class.expects(:execpipe).with(%w{/usr/sbin/pkg_info -a}).yields(StringIO.new(''))
       provider_class.instances.should be_empty
     end
 
     it "should return all packages when invoked" do
       fixture = File.read(my_fixture('pkginfo.list'))
-      provider_class.expects(:execpipe).with(%w{/bin/pkg_info -a}).yields(fixture)
+      provider_class.expects(:execpipe).with(%w{/usr/sbin/pkg_info -a}).yields(fixture)
       provider_class.instances.map(&:name).sort.should ==
         %w{bash bzip2 expat gettext libiconv lzo openvpn python vim wget}.sort
     end
 
     it "should return all flavors if set" do
       fixture = File.read(my_fixture('pkginfo_flavors.list'))
-      provider_class.expects(:execpipe).with(%w{/bin/pkg_info -a}).yields(fixture)
+      provider_class.expects(:execpipe).with(%w{/usr/sbin/pkg_info -a}).yields(fixture)
       instances = provider_class.instances.map {|p| {:name => p.get(:name),
         :ensure => p.get(:ensure), :flavor => p.get(:flavor)}}
       instances.size.should == 2
@@ -100,7 +100,7 @@ describe provider_class do
     end
 
     it "should install correctly when given a directory-unlike source" do
-      source = '/whatever.pkg'
+      source = '/whatever-1.0.tgz'
       provider.resource[:source] = source
       expect_pkgadd_with_source(source)
 
@@ -234,13 +234,13 @@ describe provider_class do
 
     it "should return the package version if in the output" do
       fixture = File.read(my_fixture('pkginfo.list'))
-      provider.expects(:execpipe).with(%w{/bin/pkg_info -I bash}).yields(fixture)
+      provider.expects(:execpipe).with(%w{/usr/sbin/pkg_info -I bash}).yields(fixture)
       provider.get_version.should == '3.1.17'
     end
 
     it "should return the empty string if the package is not present" do
       provider.resource[:name] = 'zsh'
-      provider.expects(:execpipe).with(%w{/bin/pkg_info -I zsh}).yields(StringIO.new(''))
+      provider.expects(:execpipe).with(%w{/usr/sbin/pkg_info -I zsh}).yields(StringIO.new(''))
       provider.get_version.should == ''
     end
   end
